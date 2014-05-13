@@ -19,46 +19,10 @@ public class BacktrackingDFA {
 	private List<AbstractDFA> automata;
 	private Table<int[], Character, int[]> transitions;
 	private Map<String, Token> recognisedToken;
-    private Map<Token,String> tokenMapping;
 	private final int [] initialState = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //34 * '0';
 	private int [] backtrackState = new int[initialState.length];
 	private int [] currentState = new int[initialState.length];
-
-    public void generateAttributesFromTokens()
-    {
-        tokenMapping= new HashMap<Token, String>();
-        tokenMapping.put(Token.WHILE,"while");
-        tokenMapping.put(Token.WRITE,"write");
-        tokenMapping.put(Token.READ,"read");
-        tokenMapping.put(Token.INT,"int");
-        tokenMapping.put(Token.IF,"IF");
-        tokenMapping.put(Token.ELSE,"else");
-        tokenMapping.put(Token.TRUE,"true");
-        tokenMapping.put(Token.FALSE,"false");
-        tokenMapping.put(Token.LPAR,"(");
-        tokenMapping.put(Token.RPAR,")");
-        tokenMapping.put(Token.LBRACE,"{");
-        tokenMapping.put(Token.RBRACE,"}");
-        tokenMapping.put(Token.PLUS,"+");
-        tokenMapping.put(Token.MINUS,"-");
-        tokenMapping.put(Token.TIMES,"*");
-        tokenMapping.put(Token.DIV,"/");
-        tokenMapping.put(Token.LEQ,"<=");
-        tokenMapping.put(Token.LT,"<");
-        tokenMapping.put(Token.GEQ,">=");
-        tokenMapping.put(Token.GT,">");
-        tokenMapping.put(Token.EQ,"==");
-        tokenMapping.put(Token.ASSIGN,"=");
-        tokenMapping.put(Token.NEQ,"!=");
-        tokenMapping.put(Token.AND,"&&");
-        tokenMapping.put(Token.OR,"||");
-        tokenMapping.put(Token.NOT,"!");
-        tokenMapping.put(Token.SEMICOLON,";");
-        tokenMapping.put(Token.EOF,"$");
-        tokenMapping.put(Token.BLANK," ");
-
-
-    }
+	
 	/*
 	 * This method creates an array of DFAs, one for every token (and symbol).
 	 * Those automata will run in parallel and are controlled by the
@@ -110,7 +74,7 @@ public class BacktrackingDFA {
 		assert(automata.size() == initialState.length);
 	}
 	
-	//All possible state-combinations for all automata?
+	
 	private void generateTransitions(){
 		transitions = HashBasedTable.create();
 		char [] relevantAlphabet =
@@ -152,12 +116,11 @@ public class BacktrackingDFA {
 	private String hashState(int [] state){
 		StringBuilder builder = new StringBuilder();
 		for(int i = 0; i < state.length; i++){
-			builder.append(state[i]).append(",");//just appending the numbers = bad
+			builder.append(state[i]);
 		}
 		return builder.toString();
 	}
-
-
+	
 	private void mapFinalStatesToTokens(){
 		recognisedToken = new HashMap<String, Token>();
 		for(int [] state : transitions.rowKeySet()){
@@ -174,7 +137,6 @@ public class BacktrackingDFA {
 	}
 	
 	public BacktrackingDFA(){
-        generateAttributesFromTokens();
 		generateDFAforTokens();
 		generateTransitions();
 		mapFinalStatesToTokens();
