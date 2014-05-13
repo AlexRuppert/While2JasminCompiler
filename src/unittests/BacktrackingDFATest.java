@@ -41,7 +41,7 @@ public class BacktrackingDFATest
     @Test
     public void test1() throws IOException
     {
-        String testFile="./test2/backtracking1.txt";
+        String testFile="./test2/backtracking2.txt";
         String comparisonFile="./test2/symbols1.txt";
 
         String inputProgram = file2String(testFile);

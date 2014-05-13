@@ -27,11 +27,11 @@ public class BacktrackingDFA {
     public void generateAttributesFromTokens()
     {
         tokenMapping= new HashMap<Token, String>();
-        tokenMapping.put(Token.WHILE,"while");
+       /* tokenMapping.put(Token.WHILE,"while");
         tokenMapping.put(Token.WRITE,"write");
         tokenMapping.put(Token.READ,"read");
         tokenMapping.put(Token.INT,"int");
-        tokenMapping.put(Token.IF,"IF");
+        tokenMapping.put(Token.IF,"if");
         tokenMapping.put(Token.ELSE,"else");
         tokenMapping.put(Token.TRUE,"true");
         tokenMapping.put(Token.FALSE,"false");
@@ -53,7 +53,7 @@ public class BacktrackingDFA {
         tokenMapping.put(Token.AND,"&&");
         tokenMapping.put(Token.OR,"||");
         tokenMapping.put(Token.NOT,"!");
-        tokenMapping.put(Token.SEMICOLON,";");
+        tokenMapping.put(Token.SEMICOLON,";");*/
         tokenMapping.put(Token.EOF,"$");
         tokenMapping.put(Token.BLANK," ");
 
@@ -198,8 +198,80 @@ public class BacktrackingDFA {
 	 */
 	public List<Symbol> run(String word) throws LexerException{
 		List<Symbol> result = new ArrayList<Symbol>();
-		
-		
+
+        String currentAttribute="";
+		Token current=null;
+        Token previous=current;
+        int lastCorrectIndex=0;
+
+        for(int i = 0; i < word.length(); i++){
+            char letter=word.charAt(i);
+
+            if(current==null)// normal mode
+            {
+                current=doStep(letter);
+                currentAttribute=""+letter;
+                if(!isProductive())
+                {
+                    throw new LexerException("not productive state",result);
+                }
+            }
+            else //backtrack mode
+            {
+
+                previous=current;
+                current=doStep(letter);
+                if(!isProductive())
+                {
+                    if(tokenMapping.get(previous)!=null)
+                        result.add(new Symbol(previous,tokenMapping.get(previous)));
+                    else
+                    {
+                        result.add(new Symbol(previous, currentAttribute));
+                    }
+                    current=null;
+                    currentAttribute="";
+                    resetToState(initialState);
+                    i=lastCorrectIndex;
+                    System.out.println(result);
+                }
+                else if(current!=null)//final
+                {
+                    currentAttribute+=letter;
+                    lastCorrectIndex=i;
+                }
+            }
+
+          /*  if(i==word.length()-1&&current!=null)
+            {
+                if(tokenMapping.get(current)!=null)
+                    result.add(new Symbol(current,tokenMapping.get(current)));
+                else
+                {
+                    result.add(new Symbol(current, currentAttribute));
+                }
+                current=null;
+                currentAttribute="";
+                resetToState(initialState);
+                i=lastCorrectIndex;
+            }*/
+        }
+
+        if(current!=null)
+        {
+            if(tokenMapping.get(current)!=null)
+                result.add(new Symbol(current,tokenMapping.get(current)));
+            else
+            {
+                result.add(new Symbol(current, currentAttribute));
+            }
+
+        }
+        else
+        {
+            throw new LexerException("no final state",result);
+        }
+
 		
 		return result;
 	}
