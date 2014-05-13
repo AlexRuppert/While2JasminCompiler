@@ -22,7 +22,7 @@ public class Symbol{
 	}
 
 	public String toString()  { 
-		return "(" + token.toString() + ", " + attribute + ")";
+		return "(" + token.toString() + ", " + attribute.toString() + ")"; 
 	}
 
 }

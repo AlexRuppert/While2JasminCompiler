@@ -27,11 +27,11 @@ public class BacktrackingDFA {
     public void generateAttributesFromTokens()
     {
         tokenMapping= new HashMap<Token, String>();
-       /* tokenMapping.put(Token.WHILE,"while");
+        tokenMapping.put(Token.WHILE,"while");
         tokenMapping.put(Token.WRITE,"write");
         tokenMapping.put(Token.READ,"read");
         tokenMapping.put(Token.INT,"int");
-        tokenMapping.put(Token.IF,"if");
+        tokenMapping.put(Token.IF,"IF");
         tokenMapping.put(Token.ELSE,"else");
         tokenMapping.put(Token.TRUE,"true");
         tokenMapping.put(Token.FALSE,"false");
@@ -53,7 +53,7 @@ public class BacktrackingDFA {
         tokenMapping.put(Token.AND,"&&");
         tokenMapping.put(Token.OR,"||");
         tokenMapping.put(Token.NOT,"!");
-        tokenMapping.put(Token.SEMICOLON,";");*/
+        tokenMapping.put(Token.SEMICOLON,";");
         tokenMapping.put(Token.EOF,"$");
         tokenMapping.put(Token.BLANK," ");
 
