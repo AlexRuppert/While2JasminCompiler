@@ -1,8 +1,10 @@
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 
-import lexer.*;
-import lexer.LexerGenerator.Token;
+import lexer.LexerException;
+import lexer.LexerGenerator;
+import lexer.Symbol;
 
 public class Main {
 
@@ -26,20 +28,20 @@ public class Main {
 		}
 		
 		// Lexical Analysis
-		System.out.println("input: "+inputProgram);
-		// here comes the call and result of the automaton that recognises "while"
-		AbstractDFA whileDFA = new DFA("while",Token.WHILE);
-		System.out.println("WHILE: "+whileDFA.run(inputProgram));
-		// here comes the call and result of the automaton that recognises comments
-		AbstractDFA commentDFA = new CommentDFA();
-		System.out.println("COMMENT: "+commentDFA.run(inputProgram));
+		List<Symbol> symbols = null;
+		try {
+			symbols = LexerGenerator.analyse(inputProgram);	
+			System.out.println("Symbol stream: "+symbols);
+		} catch (LexerException e) {
+			System.out.println(e.getMessage());
+			System.out.println(e.getAnalysisBeforeFailure());
+		}
 				
 		// Syntactical Analysis
 						
 		// Semantical Analysis
 		
 		// Byte Code Generation
-		
 	}
 	
 	public static void showHelp(){
@@ -47,7 +49,7 @@ public class Main {
 	}
 	
 	public static String file2String(String filename) throws IOException {
-		// Versuche Datei zu Öffnen - Löst FileNotFoundException aus,
+		// Versuche Datei zu öffnen - Löst FileNotFoundException aus,
 		// wenn Datei nicht existiert, ein Verzeichnis ist oder nicht gelesen
 		// werden kann
 		FileReader in = new FileReader(filename);

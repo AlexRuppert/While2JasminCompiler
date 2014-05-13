@@ -2,9 +2,15 @@ package lexer;
 
 import lexer.LexerGenerator.Token;
 
-//import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBasedTable;
 
 public class CommentDFA extends AbstractDFA{
+	
+	private final int slashRead = 1;
+	private final int singleLine = 2;
+	private final int multiLine = 3;
+	private final int maybeEndMultiLine = 4;
+	private final int macFinalState = 6;
 	
 	/**
 	 * Construct a new DFA that recognises comments within source code
@@ -14,21 +20,22 @@ public class CommentDFA extends AbstractDFA{
 	 * (without the space)
 	 */
 	public CommentDFA(){
-		this.token = Token.COMMENT;
-
-        addTransition(INITIAL_STATE,'/',INITIAL_STATE+1);//must start with /
-            addTransition(INITIAL_STATE+1,'/',INITIAL_STATE+2);//either * or /
-                addTransition(INITIAL_STATE+2,ELSE,INITIAL_STATE+2);//something other than \n, irrelevant
-                addTransition(INITIAL_STATE+2,'\n',FINAL_STATE);
-
-
-            addTransition(INITIAL_STATE+1,'*',INITIAL_STATE+3);
-                addTransition(INITIAL_STATE+3,'*',INITIAL_STATE+4);//if another * occurs
-                addTransition(INITIAL_STATE+3,ELSE,INITIAL_STATE+3);// ignore everything else
-                addTransition(INITIAL_STATE+4,'/',FINAL_STATE); //after another * comes/
-                addTransition(INITIAL_STATE+4,ELSE,INITIAL_STATE+3);//if after the other * comes no /, loop back
-                addTransition(INITIAL_STATE+4,'*',INITIAL_STATE+4);//if additional *, stay in state
-
+		token = Token.COMMENT;
+		// state 0 is the initial state
+		
+		finalState = 5;
+		sinkState = 7;
+		
+		transitions = HashBasedTable.create(7,2);
+		transitions.put(initialState, '/', slashRead);
+		transitions.put(slashRead, '/', singleLine);
+		transitions.put(slashRead, '*', multiLine);
+		transitions.put(singleLine, '\n', finalState);
+		transitions.put(singleLine, '\r', macFinalState);
+		transitions.put(macFinalState, '\n', finalState);
+		transitions.put(multiLine, '*', maybeEndMultiLine);
+		transitions.put(maybeEndMultiLine, '*', maybeEndMultiLine);
+		transitions.put(maybeEndMultiLine, '/', finalState);
 	}
 	
 	/**
@@ -36,15 +43,24 @@ public class CommentDFA extends AbstractDFA{
 	 * differently than in the superclass AbstractDFA
 	 * @param letter
 	 */
-    /* no it doesn't..
-
-    public void doStep(char letter){
-		//TODO
+	public void doStep(char letter){
+		Integer nextState = transitions.get(currentState, letter);
+		if(null == nextState){
+			if(currentState == singleLine){} //stay there
+			else if(currentState == multiLine){} //stay there
+			else if(currentState == maybeEndMultiLine){
+				currentState = multiLine;
+			}
+			else{	
+				currentState = sinkState;
+			}
+		}
+		else
+			currentState = nextState;
 	}
 
 	@Override
 	public boolean isAccepting() {
-		//TODO
-		return false;
-	}*/
+		return (currentState == finalState || currentState == macFinalState);
+	}
 }

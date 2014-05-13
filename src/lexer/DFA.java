@@ -2,7 +2,7 @@ package lexer;
 
 import lexer.LexerGenerator.Token;
 
-//import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBasedTable;
 
 public class DFA extends AbstractDFA{
 	
@@ -19,16 +19,13 @@ public class DFA extends AbstractDFA{
 		assert(word.length() > 0);
 		
 		this.token = token;
-
-        int states=INITIAL_STATE;
-        word=prepareString(word);
-        char[] inputCharWord = word.toCharArray();
-        for(int i =0; i<inputCharWord.length-1;i++)
-        {
-            addTransition(states,inputCharWord[i],++states);
-        }
-        addTransition(states,inputCharWord[inputCharWord.length-1],FINAL_STATE);
-
-
+		
+		finalState = word.length();
+		sinkState = word.length() + 1;
+		
+		transitions = HashBasedTable.create(word.length() + 2,1);
+		for(int i = 0; i < word.length(); i++){
+			transitions.put(i, word.charAt(i), i+1);
+		}
 	}
 }
