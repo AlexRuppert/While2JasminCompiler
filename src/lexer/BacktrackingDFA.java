@@ -199,80 +199,80 @@ public class BacktrackingDFA {
 	public List<Symbol> run(String word) throws LexerException{
 		List<Symbol> result = new ArrayList<Symbol>();
 
-        String currentAttribute="";
-		Token current=null;
-        Token previous=current;
-        int lastCorrectIndex=0;
+		String w = word;
+		String cur_name = "";
+		int wordIndex = 0;
 
-        for(int i = 0; i < word.length(); i++){
-            char letter=word.charAt(i);
+		Token token = null; // normal mode
+		boolean finished = false;
 
-            if(current==null)// normal mode
-            {
-                current=doStep(letter);
-                currentAttribute=""+letter;
-                if(!isProductive())
-                {
-                    throw new LexerException("not productive state",result);
-                }
-            }
-            else //backtrack mode
-            {
+		while (!finished) {
+			// end of input
+			if (wordIndex == w.length()) {
+				if (token == null) {
+					throw new LexerException("lexerr", result);
+				} else {
+					boolean accepting = false;
+					for (int i = 0; i < automata.size(); i++) {
+						if (automata.get(i).isAccepting()) {
+							result.add(new Symbol(token, cur_name));
+							accepting = true;
+							finished = true;
+							break;
+						}
+					}
+					if (!accepting) {
+						result.add(new Symbol(token, cur_name));
+						wordIndex = 0;
+						resetToState(initialState);
+						token = null;
+					}
+				}
+			}
+			// normal mode
+			else if (token == null) {
+				Token newToken = doStep(w.charAt(wordIndex++));
+				cur_name += w.charAt(wordIndex-1);
+				if (isProductive()) {
+					boolean accepting = false;
+					for (int i = 0; i < automata.size(); i++) {
+						if (automata.get(i).isAccepting()) {
+							accepting = true;
+							break;
+						}
+					}
+					if (accepting) {
+						token = newToken;
+					}
+					w = w.substring(wordIndex);
+					wordIndex = 0;
+				} else {
+					throw new LexerException("lexerr", result);
+				}
+			}
+			// backtrack mode
+			else {
+				Token newToken = doStep(w.charAt(wordIndex++));
+				if (isProductive()) {
+					cur_name += w.charAt(wordIndex-1);
+					for (int i = 0; i < automata.size(); i++) {
+						if (automata.get(i).isAccepting()) {
+							w = w.substring(wordIndex);
+							wordIndex = 0;
+							token = newToken;
+							break;
+						}
+					}
+				} else {
+					result.add(new Symbol(token, cur_name));
+					wordIndex = 0;
+					resetToState(initialState);
+					cur_name = "";
+					token = null;
+				}
+			}
+		}
 
-                previous=current;
-                current=doStep(letter);
-                if(!isProductive())
-                {
-                    if(tokenMapping.get(previous)!=null)
-                        result.add(new Symbol(previous,tokenMapping.get(previous)));
-                    else
-                    {
-                        result.add(new Symbol(previous, currentAttribute));
-                    }
-                    current=null;
-                    currentAttribute="";
-                    resetToState(initialState);
-                    i=lastCorrectIndex;
-                    System.out.println(result);
-                }
-                else if(current!=null)//final
-                {
-                    currentAttribute+=letter;
-                    lastCorrectIndex=i;
-                }
-            }
-
-          /*  if(i==word.length()-1&&current!=null)
-            {
-                if(tokenMapping.get(current)!=null)
-                    result.add(new Symbol(current,tokenMapping.get(current)));
-                else
-                {
-                    result.add(new Symbol(current, currentAttribute));
-                }
-                current=null;
-                currentAttribute="";
-                resetToState(initialState);
-                i=lastCorrectIndex;
-            }*/
-        }
-
-        if(current!=null)
-        {
-            if(tokenMapping.get(current)!=null)
-                result.add(new Symbol(current,tokenMapping.get(current)));
-            else
-            {
-                result.add(new Symbol(current, currentAttribute));
-            }
-
-        }
-        else
-        {
-            throw new LexerException("no final state",result);
-        }
-
-		
 		return result;
 	}
 	
