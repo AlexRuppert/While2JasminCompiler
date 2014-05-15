@@ -1,2 +1,2 @@
-java -cp "..\src\*"; Main ..\test1\test1.txt
+java -cp "..\src\*"; Main ..\test2\backtracking1.txt
 pause
