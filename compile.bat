@@ -1,0 +1,1 @@
+javac -d bin -sourcepath src -cp src/guava-11.0.2.jar src/Main.java

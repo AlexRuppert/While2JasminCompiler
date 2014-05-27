@@ -1,6 +1,7 @@
 package lexer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,17 +21,8 @@ public class BacktrackingDFA {
 	private Table<int[], Character, int[]> transitions;
 	private Map<String, Token> recognisedToken;
 	private final int [] initialState = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //34 * '0';
-	private int [] backtrackState = new int[initialState.length];
 	private int [] currentState = new int[initialState.length];
-	
-	/*
-	 * This method creates an array of DFAs, one for every token (and symbol).
-	 * Those automata will run in parallel and are controlled by the
-	 * doStep()
-	 * isProductive()
-	 * resetToState()
-	 * methods.
-	 */
+		
 	public void generateDFAforTokens(){
 		automata = new ArrayList<AbstractDFA>(initialState.length);
 		// generate all automata
@@ -73,7 +65,6 @@ public class BacktrackingDFA {
 		
 		assert(automata.size() == initialState.length);
 	}
-	
 	
 	private void generateTransitions(){
 		transitions = HashBasedTable.create();
@@ -140,6 +131,7 @@ public class BacktrackingDFA {
 		generateDFAforTokens();
 		generateTransitions();
 		mapFinalStatesToTokens();
+//		System.out.println("Number of transitions of Backtracking DFA: "+transitions.size());
 	}
 	
 	public Token doStep(char letter){
@@ -150,91 +142,40 @@ public class BacktrackingDFA {
 		return recognisedToken.get(hashState(currentState));
 	}
 	
-	/**
-	 * Given a string of lexemes, chop them up to the corresponding symbols, i.e. a list of token, attribute pairs.
-	 * Note that since all keywords and symbols are represented by their own token, the attribute only really matters for 
-	 * identifiers and numbers.
-	 * @param word
-	 * @return
-	 * @throws LexerException
-	 */
 	public List<Symbol> run(String word) throws LexerException{
 		List<Symbol> result = new ArrayList<Symbol>();
-
-		String w = word;
-		String cur_name = "";
-		int wordIndex = 0;
-
-		Token token = null; // normal mode
-		boolean finished = false;
-
-		while (!finished) {
-			// end of input
-			if (wordIndex == w.length()) {
-				if (token == null) {
-					throw new LexerException("lexerr", result);
-				} else {
-					boolean accepting = false;
-					for (int i = 0; i < automata.size(); i++) {
-						if (automata.get(i).isAccepting()) {
-							result.add(new Symbol(token, cur_name));
-							accepting = true;
-							finished = true;
-							break;
-						}
-					}
-					if (!accepting) {
-						result.add(new Symbol(token, cur_name));
-						wordIndex = 0;
-						resetToState(initialState);
-						token = null;
-					}
+		char [] wordAsChar = word.toCharArray();
+		Token backtrackToken = null;
+		Token currentToken = null;
+		int backtrackPointer = 0;
+		int currentPointer = 0;
+		System.arraycopy(initialState, 0, currentState, 0, initialState.length);
+		
+		while(backtrackPointer < wordAsChar.length){
+			String value = Character.toString(wordAsChar[currentPointer]);
+			while(currentPointer < wordAsChar.length && isProductive()){
+				currentToken = doStep(wordAsChar[currentPointer]);
+				if(null != currentToken){
+					value += new String(Arrays.copyOfRange(wordAsChar, backtrackPointer+1, currentPointer+1));
+					backtrackToken = currentToken;
+					backtrackPointer = currentPointer;
 				}
+				currentPointer++;
 			}
-			// normal mode
-			else if (token == null) {
-				Token newToken = doStep(w.charAt(wordIndex++));
-				cur_name += w.charAt(wordIndex-1);
-				if (isProductive()) {
-					boolean accepting = false;
-					for (int i = 0; i < automata.size(); i++) {
-						if (automata.get(i).isAccepting()) {
-							accepting = true;
-							break;
-						}
-					}
-					if (accepting) {
-						token = newToken;
-					}
-					w = w.substring(wordIndex);
-					wordIndex = 0;
-				} else {
-					throw new LexerException("lexerr", result);
-				}
+			if(null != backtrackToken){
+				result.add(new Symbol(backtrackToken, value));
+				currentPointer = backtrackPointer+1;
+				resetToState(initialState);
+				backtrackToken = null;
+				backtrackPointer++;
 			}
-			// backtrack mode
-			else {
-				Token newToken = doStep(w.charAt(wordIndex++));
-				if (isProductive()) {
-					cur_name += w.charAt(wordIndex-1);
-					for (int i = 0; i < automata.size(); i++) {
-						if (automata.get(i).isAccepting()) {
-							w = w.substring(wordIndex);
-							wordIndex = 0;
-							token = newToken;
-							break;
-						}
-					}
-				} else {
-					result.add(new Symbol(token, cur_name));
-					wordIndex = 0;
-					resetToState(initialState);
-					cur_name = "";
-					token = null;
-				}
+			else{
+				throw new LexerException("Last backtrack position is: "+
+				        backtrackPointer+"\nScanned before failure: "+
+						word.substring(0, backtrackPointer+1), result);
 			}
 		}
-
+		
 		return result;
 	}
 	

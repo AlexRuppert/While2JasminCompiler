@@ -1,10 +1,14 @@
-import java.io.FileReader;
+﻿import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import lexer.LexerException;
 import lexer.LexerGenerator;
+import lexer.LexerGenerator.Token;
 import lexer.Symbol;
+import parser.*;
 
 public class Main {
 
@@ -13,34 +17,41 @@ public class Main {
 	public static void main(String[] args) {
 		// If args is not a path to a text file, show help.
 		// Otherwise open the file
-		if(args.length != 1){
-			showHelp();
-			System.exit(0);
-		}
-		else{
-			try {
-				inputProgram = file2String(args[0]);
-			} catch (IOException e) {
-				e.printStackTrace();
-				showHelp();
-				System.exit(0);
-			}
-		}
+//		if(args.length != 1){
+//			showHelp();
+//			System.exit(0);
+//		}
+//		else{
+//			try {
+//				inputProgram = file2String(args[0]);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				showHelp();
+//				System.exit(0);
+//			}
+//		}
 		
 		// Lexical Analysis
-		List<Symbol> symbols = null;
-		try {
-			symbols = LexerGenerator.analyse(inputProgram);	
-			System.out.println("Symbol stream: "+symbols);
-		} catch (LexerException e) {
-			System.out.println(e.getMessage());
-			System.out.println(e.getAnalysisBeforeFailure());
-		}
+//		List<Symbol> symbols = null;
+//		try {
+//			symbols = LexerGenerator.analyse(inputProgram);	
+//			System.out.println("Symbol stream: "+symbols);
+//		} catch (LexerException e) {
+//			System.out.println(e.getMessage());
+//			System.out.println(e.getAnalysisBeforeFailure());
+//		}
 				
 		// Syntactical Analysis
+		Grammar grammar = WhileGrammar.getInstance();
+//		System.out.println(grammar);
+		GotoDFA gt = new GotoDFA(grammar);
+		gt.printLR0Sets();
+		System.out.println("There are "+gt.states.size()+" LR(0) sets.");
+		System.out.println(gt.countConflicts()+" conflicts were detected");
+//		System.out.println(parser.getGotoDFA());
 						
 		// Semantical Analysis
-		
+				
 		// Byte Code Generation
 	}
 	
