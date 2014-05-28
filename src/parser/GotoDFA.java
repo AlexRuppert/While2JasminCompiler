@@ -58,79 +58,81 @@ public class GotoDFA {
 		
 		states.add(initialState);
 		
-		// TODO check if this is correct
 		boolean changed;
-		LR0Set newToSet;
-		LR0Item newItem;
 		do {
 			changed = false;
-			newToSet = null;
-			newItem = null;
-					
+			
 			for (LR0Set state: states) {
+				// second rule
 				for (LR0Item item : state) {
-					// first rule
-					if (item.canShift()) {
-						Alphabet symbol = item.getShiftableSymbolName();
-						newItem = item.getShiftedItem();
-						
-						newToSet = getSuccessor(state, symbol);
-						if (newToSet == null) {
-							String name = state.getName() + symbol; // TODO check name (insert space?)
-							
-							newToSet = new LR0Set();
-							newToSet.setName(name);
-							transitions.put(state, symbol, newToSet);
+					NonTerminal nonTerminal = item.getEpsilonStep();
+					if (nonTerminal != null) {
+						if (!state.containsAll(freshItems(nonTerminal))) {
+							state.addAll(freshItems(nonTerminal));
 							changed = true;
+							break;
 						}
-						if (!newToSet.contains(newItem)) {
-							changed = true;
-						}
-					}
-					if (changed) {
-						break;
-					}
-					// second rule
-					// TODO fix, doesn't terminate
-					if (item.canShift()) {
-						NonTerminal symbol = item.getEpsilonStep();
-						if (symbol != null) {
-							List<Rule> rules = grammar.getRules(symbol);
-							if (rules != null) {
-								for (Rule rule: rules) {
-									newItem = LR0Item.freshItem(rule);
-									if (!state.contains(newItem)) {
-										System.out.println("adding item " + newItem + " to " + state); // TODO remove
-										newToSet = state;
-										changed = true;
-										break;
-									}
-								}
-							}
-						}
-					}
-					if (changed) {
-						break;
 					}
 				}
 				if (changed) {
-					break;
+					break; // avoid ConcurrentModificationException
 				}
-			}
-			if (changed) {
-				if (newToSet != null) {
-					if (newItem != null) {
-						newToSet.add(newItem);
+				
+				// first rule
+				Set<Alphabet> shiftableSymbols = state.getShiftableSymbols();
+				for (Alphabet symbol: shiftableSymbols) {
+					LR0Set shiftedState = state.getShiftedItemsFor(symbol);
+					
+					// find toState for symbol
+					LR0Set toState = transitions.get(state, symbol);
+					
+					// create new toState if required
+					if (toState == null) {
+						toState = new LR0Set();
+						String name = state.getName() + (!state.getName().isEmpty()? " " :"") + symbol;
+						
+						toState.setName(name);
+						states.add(toState);
+						transitions.put(state, symbol, toState);
+						changed = true;
 					}
-					states.add(newToSet);
+					
+					// add new items
+					for (LR0Item item : shiftedState) {
+						if (!toState.contains(item)) {
+							toState.add(item);
+							changed = true;
+						}
+					}
+				}
+				if (changed) {
+					break; // avoid ConcurrentModificationException
 				}
 			}
-		} while (changed); 
+			
+			// remove duplicate states
+			boolean removedDuplicateState;
+			do {
+				removedDuplicateState = false;
+				for (LR0Set state1: states) {
+					for (LR0Set state2: states) {
+						if (state1 != state2 && ((HashSet<LR0Item>) state1).equals((HashSet<LR0Item>) state2)) {
+							states.remove(state2);
+							removedDuplicateState = true;
+							break;
+						}
+					}
+					if (removedDuplicateState) {
+						break;
+					}
+				}
+			} while (removedDuplicateState);	
+		} while (changed);
 	}
 	
 	private LR0Set epsilonClosure(LR0Set set){
 		LR0Set ret = new LR0Set();
-		ret.setName("epsilon");
+		ret.setName("");
 
 		for (LR0Item item : set) {
 			ret.add(item);
@@ -148,23 +150,17 @@ public class GotoDFA {
 						for (Rule rule: rules) {
 							newItem = LR0Item.freshItem(rule);
 							if (!ret.contains(newItem)) {
-								System.out.println("adding item " + newItem); // TODO remove
-								break;
+								ret.add(newItem);
 							} else {
 								newItem = null;
 							}
 						}
-						if (newItem != null) {
-							break;
-						}
 					}
 				}
+				if (newItem != null) {
+					break; // avoid ConcurrentModificationException
+				}
 			}
-			
-			// add outside of loop to avoid ConcurrentModificationException
-			if (newItem != null) {
-				ret.add(newItem);
-			}			
 		} while (newItem != null);
 		
 		return ret;

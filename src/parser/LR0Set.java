@@ -27,8 +27,40 @@ public class LR0Set extends HashSet<LR0Item>{
 	}
 
 	public boolean hasConflicts() {
-		//TODO
-		return false;
+		boolean ret = false;
+		
+		// shift/reduce conflicts
+		boolean shiftRecuceConflictCond1 = false;
+		boolean shiftRecuceConflictCond2 = false;
+		for (LR0Item item: this) {
+			if (item.canShiftOverTerminal()) {
+				shiftRecuceConflictCond1 = true;
+			}
+			if (item.canReduce()) {
+				shiftRecuceConflictCond2 = true;
+			}
+			if (shiftRecuceConflictCond1 && shiftRecuceConflictCond2) {
+				System.out.println("shift/reduce conflict in " + this);
+				ret = true;
+				break;
+			}
+		}
+		
+		// reduce/reduce conflict
+		boolean canReduce = false;
+		// note: there exist no equal items -> sufficient to find two which can be reduced
+		for (LR0Item item: this) {
+			if (item.canReduce()) {
+				if (canReduce) {
+					System.out.println("reduce/reduce conflict in " + this);
+					ret = true;		
+					break;
+				}
+				canReduce = true;
+			}
+		}
+		
+		return ret;
 	}
 
 	public Set<Alphabet> getShiftableSymbols() {
