@@ -23,44 +23,33 @@ public class LR0Set extends HashSet<LR0Item>{
 			result.append(it.next());
 			result.append("\\n");
 		}
+//		result.append("\\n");
 		return result.toString();
 	}
 
 	public boolean hasConflicts() {
-		boolean ret = false;
+		int canShift = 0;
+		int canReduce = 0;
 		
-		// shift/reduce conflicts
-		boolean shiftRecuceConflictCond1 = false;
-		boolean shiftRecuceConflictCond2 = false;
-		for (LR0Item item: this) {
-			if (item.canShiftOverTerminal()) {
-				shiftRecuceConflictCond1 = true;
-			}
-			if (item.canReduce()) {
-				shiftRecuceConflictCond2 = true;
-			}
-			if (shiftRecuceConflictCond1 && shiftRecuceConflictCond2) {
-				System.out.println("shift/reduce conflict in " + this);
-				ret = true;
-				break;
-			}
+		Iterator<LR0Item> it = iterator();
+		while(it.hasNext()){
+			LR0Item curItem = it.next();
+			if(curItem.canShiftOverTerminal())
+				canShift++;
+			if(curItem.canReduce())
+				canReduce++;
 		}
-		
-		// reduce/reduce conflict
-		boolean canReduce = false;
-		// note: there exist no equal items -> sufficient to find two which can be reduced
-		for (LR0Item item: this) {
-			if (item.canReduce()) {
-				if (canReduce) {
-					System.out.println("reduce/reduce conflict in " + this);
-					ret = true;		
-					break;
-				}
-				canReduce = true;
-			}
+
+		if(canReduce >= 2) {
+			System.out.println("RED/RED conflict "+this);
+			return true; // reduce/reduce conflict
 		}
-		
-		return ret;
+		if(canReduce >= 1 && canShift >= 1) {
+			System.out.println("SFT/RED conflict "+this);
+			return true; // shift/reduce conflict
+		}
+
+		return false;		
 	}
 
 	public Set<Alphabet> getShiftableSymbols() {

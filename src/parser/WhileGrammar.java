@@ -20,9 +20,6 @@ public class WhileGrammar extends Grammar {
 		return INSTANCE;
 	}
 
-	/**
-	 * This class repre
-	 */
 	private WhileGrammar () {
 		rules = new HashMap<Grammar.NonTerminal, List<List<Alphabet>>>();
 		List<List<Alphabet>> alternatives = new ArrayList<List<Alphabet>>();
@@ -190,6 +187,8 @@ public class WhileGrammar extends Grammar {
 		alternatives = new ArrayList<List<Alphabet>>();
 		rhs = new ArrayList<Alphabet>();
 		
+		computeFirst();
+		computeFollow();
 	}
 
 }

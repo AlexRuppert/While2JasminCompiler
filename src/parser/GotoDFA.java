@@ -1,7 +1,10 @@
 package parser;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 import parser.Grammar.NonTerminal;
@@ -26,6 +29,12 @@ public class GotoDFA {
 		states.add(state);
 	}
 	
+	public void addTransition(LR0Set source, Alphabet letter, LR0Set target){
+		assert(states.contains(source));
+		assert(states.contains(target));
+		transitions.put(source, letter, target);
+	}
+	
 	/**
 	 * 
 	 * @param source
@@ -36,134 +45,81 @@ public class GotoDFA {
 		return transitions.get(source, letter);
 	}
 	
-	/**
-	 * This method computes all LR0 sets and transitions between them.
-	 */
 	public void generateLR0StateSpace(){
-		assert(grammar != null);
-		
-		List<Rule> startRules = grammar.getRules(NonTerminal.start);
-		
-		if (startRules == null || startRules.size() == 0) {
-			return;
-		}
-		
-		// we assume that there's just one start rule
-		assert(startRules.size() == 1);
-		
-		Rule startRule = startRules.get(0);
-		LR0Set startSet = freshItems(startRule.getLhs());
-		
-		initialState = epsilonClosure(startSet);
-		
-		states.add(initialState);
-		
-		boolean changed;
-		do {
-			changed = false;
-			
-			for (LR0Set state: states) {
-				// second rule
-				for (LR0Item item : state) {
-					NonTerminal nonTerminal = item.getEpsilonStep();
-					if (nonTerminal != null) {
-						if (!state.containsAll(freshItems(nonTerminal))) {
-							state.addAll(freshItems(nonTerminal));
-							changed = true;
+		// start with the empty word
+		LR0Set epsilon = new LR0Set();
+		assert(grammar.getRules(NonTerminal.start).size() == 1);
+		Rule startRule = grammar.getRules(NonTerminal.start).get(0);
+		epsilon.add(LR0Item.freshItem(startRule));
+		epsilon.addAll(epsilonClosure(epsilon));
+		epsilon.setName("epsilon"); //epsilon.setName("");
+		states.add(epsilon);
+		initialState = epsilon;
+
+		// while new sets were added continue building
+		Queue<LR0Set> queue = new LinkedList<LR0Set>();
+		queue.add(epsilon);
+		while(!queue.isEmpty()){
+			LR0Set set = queue.poll();
+			Set<Alphabet> symbols = set.getShiftableSymbols();
+			for(Alphabet symbol : symbols){
+				LR0Set newSet = new LR0Set();
+				newSet.setName(set.getName() + symbol);//newSet.setName(set.getName() + " " + symbol);
+				newSet.addAll(set.getShiftedItemsFor(symbol));
+				newSet.addAll(epsilonClosure(newSet));
+				if(!states.contains(newSet)){
+					queue.add(newSet);
+					states.add(newSet);
+				}
+				else {
+					for(LR0Set state : states){
+						if (state.equals(newSet)){
+							newSet = state;
 							break;
 						}
 					}
 				}
-				if (changed) {
-					break; // avoid ConcurrentModificationException
-				}
-				
-				// first rule
-				Set<Alphabet> shiftableSymbols = state.getShiftableSymbols();
-				for (Alphabet symbol: shiftableSymbols) {
-					LR0Set shiftedState = state.getShiftedItemsFor(symbol);
-					
-					// find toState for symbol
-					LR0Set toState = transitions.get(state, symbol);
-					
-					// create new toState if required
-					if (toState == null) {
-						toState = new LR0Set();
-						String name = state.getName() + (!state.getName().isEmpty()? " " :"") + symbol;
-						
-						toState.setName(name);
-						states.add(toState);
-						transitions.put(state, symbol, toState);
-						changed = true;
-					}
-					
-					// add new items
-					for (LR0Item item : shiftedState) {
-						if (!toState.contains(item)) {
-							toState.add(item);
-							changed = true;
-						}
-					}
-				}
-				if (changed) {
-					break; // avoid ConcurrentModificationException
+				if(!transitions.contains(set, symbol)) {
+					assert(!transitions.contains(set, symbol));
+					transitions.put(set, symbol, newSet);
 				}
 			}
-			
-			// remove duplicate states
-			boolean removedDuplicateState;
-			do {
-				removedDuplicateState = false;
-				for (LR0Set state1: states) {
-					for (LR0Set state2: states) {
-						if (state1 != state2 && ((HashSet<LR0Item>) state1).equals((HashSet<LR0Item>) state2)) {
-							states.remove(state2);
-							removedDuplicateState = true;
-							break;
-						}
-					}
-					if (removedDuplicateState) {
-						break;
-					}
-				}
-			} while (removedDuplicateState);	
-		} while (changed);
+		}
 	}
 	
 	private LR0Set epsilonClosure(LR0Set set){
-		LR0Set ret = new LR0Set();
-		ret.setName("");
-
-		for (LR0Item item : set) {
-			ret.add(item);
+		LR0Set result = new LR0Set();
+		List<NonTerminal> nonTerminals = new ArrayList<NonTerminal>();
+		
+		// for every item of the form A -> alpha * B gamma
+		// collect the nonterminal to the right of *
+		for(LR0Item item : set){
+			NonTerminal n = item.getEpsilonStep();
+			if(null != n)
+				nonTerminals.add(n);
 		}
 		
-		LR0Item newItem;
-		do {
-			newItem = null;
-			
-			for (LR0Item item : ret) {
-				NonTerminal nonTerminal = item.getEpsilonStep();
-				if (nonTerminal != null) {
-					List<Rule> rules = grammar.getRules(nonTerminal);
-					if (rules != null) {
-						for (Rule rule: rules) {
-							newItem = LR0Item.freshItem(rule);
-							if (!ret.contains(newItem)) {
-								ret.add(newItem);
-							} else {
-								newItem = null;
-							}
-						}
-					}
-				}
-				if (newItem != null) {
-					break; // avoid ConcurrentModificationException
-				}
+		for(NonTerminal nonTerminal : nonTerminals){
+			for(LR0Item item : freshItems(nonTerminal)){
+				// here we prevent the addition of items that were there already
+				// without this we might run into infinite recursion!
+				if(!set.contains(item))
+					result.add(item);
 			}
-		} while (newItem != null);
+		}
 		
-		return ret;
+		// recursively continue the closure since the above procedure might have
+		// introduced an item like [S->.Aa] etc...
+		// the recursion terminates when no *new* items of the above form can be
+		// found
+		if(result.size() > 0){
+			result.addAll(set);
+			result.addAll(epsilonClosure(result));
+			return result;
+		}
+		else {
+			return set;
+		}
 	}
 	
 	/**

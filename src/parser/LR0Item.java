@@ -12,10 +12,10 @@ public class LR0Item extends Rule{
 	// lhs -> first MARKER last
 	
 	final int marker; // marker points to index i which is the first
-	                  // symbol after the marker
-	                  // ie marker = 0 => everything comes after the dot
-	                  // marker = rhs.length => everything comes before the dot
-	                  // marker = i, 0,..,i-1 before the dot and i,..,rhs.length-1 after the dot
+	                          // symbol after the marker
+	                          // ie marker = 0 => everything comes after the dot
+	                          // marker = rhs.length => everything comes before the dot
+	                          // marker = i, 0,..,i-1 before the dot and i,..,rhs.length-1 after the dot
 	
 	
 	public LR0Item(NonTerminal lhs, Alphabet [] rhs, int marker){
@@ -24,6 +24,7 @@ public class LR0Item extends Rule{
 	}
 	
 	/**
+	 * This method can be used to check for shift/reduce conflicts
 	 * @return true iff the dot is followed by a terminal symbol 
 	 */
 	public boolean canShiftOverTerminal(){
@@ -31,6 +32,7 @@ public class LR0Item extends Rule{
 	}
 	
 	/**
+	 * This method can be used to check for shift/reduce conflicts
 	 * @return true iff there comes nothing after the dot
 	 */
 	public boolean canReduce(){
@@ -38,6 +40,7 @@ public class LR0Item extends Rule{
 	}
 	
 	/**
+	 * Used to compute the epsilon-closure
 	 * @return the non-terminal after the dot if any otherwise null
 	 */
 	public NonTerminal getEpsilonStep(){
