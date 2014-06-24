@@ -23,10 +23,12 @@ public class LR0Set extends HashSet<LR0Item>{
 			result.append(it.next());
 			result.append("\\n");
 		}
-//		result.append("\\n");
 		return result.toString();
 	}
 
+	/**
+	 * @return true iff this set has at least one shift/reduce or reduce/reduce conflict
+	 */
 	public boolean hasConflicts() {
 		int canShift = 0;
 		int canReduce = 0;
@@ -52,6 +54,10 @@ public class LR0Set extends HashSet<LR0Item>{
 		return false;		
 	}
 
+	/**
+	 * This method is useful if you need to find out how the Goto automaton can continue to build viable prefixes
+	 * @return a set of all terminals and non-terminals which can be shifted
+	 */
 	public Set<Alphabet> getShiftableSymbols() {
 		Set<Alphabet> symbols = new HashSet<Alphabet>();
 		Iterator<LR0Item> it = iterator();
@@ -95,6 +101,9 @@ public class LR0Set extends HashSet<LR0Item>{
 		return false;
 	}
 	
+	/**
+	 * @return true iff this set contains [start -> alpha *] where "start" is the starting symbol of the grammar
+	 */
 	public boolean containsFinalItem() {
 		LR0Item item = getCompleteItem();
 		if(null != item){

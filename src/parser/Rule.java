@@ -6,8 +6,8 @@ import parser.Grammar.NonTerminal;
 
 public class Rule {
 	
-	final NonTerminal lhs;
-	final Alphabet [] rhs;
+	private final NonTerminal lhs;
+	private final Alphabet [] rhs;
 	
 	public NonTerminal getLhs() {
 		return lhs;

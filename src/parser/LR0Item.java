@@ -12,10 +12,10 @@ public class LR0Item extends Rule{
 	// lhs -> first MARKER last
 	
 	final int marker; // marker points to index i which is the first
-	                          // symbol after the marker
-	                          // ie marker = 0 => everything comes after the dot
-	                          // marker = rhs.length => everything comes before the dot
-	                          // marker = i, 0,..,i-1 before the dot and i,..,rhs.length-1 after the dot
+	                  // symbol after the marker
+	                  // ie marker = 0 => everything comes after the dot
+	                  // marker = rhs.length => everything comes before the dot
+	                  // marker = i, 0,..,i-1 before the dot and i,..,rhs.length-1 after the dot
 	
 	
 	public LR0Item(NonTerminal lhs, Alphabet [] rhs, int marker){
@@ -24,11 +24,22 @@ public class LR0Item extends Rule{
 	}
 	
 	/**
-	 * This method can be used to check for shift/reduce conflicts
+	 * This method can be used to check for shift/reduce conflicts.
+	 * Note difference to canShift()
 	 * @return true iff the dot is followed by a terminal symbol 
 	 */
 	public boolean canShiftOverTerminal(){
-		return marker < rhs.length && rhs[marker] instanceof Token;
+		return marker < getRhs().length && getRhs()[marker] instanceof Token;
+	}
+	
+	/**
+	 * Check if the marker can be shifted further.
+	 * Equivalently, if it cannot this item is complete and marker = rhs.length.
+	 * Note difference to canShiftOverTerminal()
+	 * @return
+	 */
+	public boolean canShift(){
+		return marker < getRhs().length;
 	}
 	
 	/**
@@ -36,7 +47,7 @@ public class LR0Item extends Rule{
 	 * @return true iff there comes nothing after the dot
 	 */
 	public boolean canReduce(){
-		return marker == rhs.length;
+		return marker == getRhs().length;
 	}
 	
 	/**
@@ -44,23 +55,17 @@ public class LR0Item extends Rule{
 	 * @return the non-terminal after the dot if any otherwise null
 	 */
 	public NonTerminal getEpsilonStep(){
-		if(marker < rhs.length && rhs[marker] instanceof NonTerminal)
-			return (NonTerminal)rhs[marker];
+		if(marker < getRhs().length && getRhs()[marker] instanceof NonTerminal)
+			return (NonTerminal)getRhs()[marker];
 		else
 			return null;
 	}
 	
 	/**
-	 * Check if the marker can be shifted further.
-	 * Equivalently, if it cannot this item is complete and marker = rhs.length.
-	 * @return
+	 * @return true iff the starting symbol is on the left hand side of the production and nothing comes after the dot
 	 */
-	public boolean canShift(){
-		return marker < rhs.length;
-	}
-	
 	public boolean isFinal(){
-		if(!canShift() && NonTerminal.start == lhs){
+		if(!canShift() && NonTerminal.start == getLhs()){
 			return true;
 		}
 		return false;
@@ -74,7 +79,7 @@ public class LR0Item extends Rule{
 	public boolean equals(Object a){
 		if(a instanceof LR0Item){
 			LR0Item other = (LR0Item)a;
-			return other.lhs.equals(lhs) && other.marker == marker && Arrays.equals(other.rhs, rhs);
+			return other.getLhs().equals(getLhs()) && other.marker == marker && Arrays.equals(other.getRhs(), getRhs());
 		}
 		return false;
 	}
@@ -82,15 +87,15 @@ public class LR0Item extends Rule{
 	public String toString(){
 		StringBuilder result = new StringBuilder();
 		result.append("[ ");
-		result.append(lhs);
+		result.append(getLhs());
 		result.append(" -> ");
 		for(int i = 0; i < marker; i++){
-			result.append(rhs[i]);
+			result.append(getRhs()[i]);
 			result.append(" ");
 		}
 		result.append("* ");
-		for(int i = marker; i < rhs.length; i++){
-			result.append(rhs[i]);
+		for(int i = marker; i < getRhs().length; i++){
+			result.append(getRhs()[i]);
 			result.append(" ");
 		}
 		result.append("]");
@@ -99,7 +104,7 @@ public class LR0Item extends Rule{
 	
 	public LR0Item getShiftedItem(){
 		assert(canShift());
-		return new LR0Item(lhs, rhs, marker+1);
+		return new LR0Item(getLhs(), getRhs(), marker+1);
 	}
 	
 	/**
@@ -116,8 +121,8 @@ public class LR0Item extends Rule{
 	 * @return the symbol after the dot if there is one else null
 	 */
 	public Alphabet getShiftableSymbolName() {
-		if(0 <= marker && marker < rhs.length)
-			return rhs[marker];
+		if(0 <= marker && marker < getRhs().length)
+			return getRhs()[marker];
 		else //error
 			return null;
 	}

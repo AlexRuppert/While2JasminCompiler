@@ -1,0 +1,6 @@
+int x; int y;
+while (x <= y) {
+	write("...");
+}
+write(x);
+$

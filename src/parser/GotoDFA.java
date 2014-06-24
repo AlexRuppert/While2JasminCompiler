@@ -16,7 +16,11 @@ public class GotoDFA {
 	
 	Grammar grammar;
 	public Set<LR0Set> states = new HashSet<LR0Set>();
-	LR0Set initialState;
+	private LR0Set initialState;
+	public LR0Set getInitialState() {
+		return initialState;
+	}
+
 	Table<LR0Set, Alphabet, LR0Set> transitions = HashBasedTable.create();
 	
 	public GotoDFA(Grammar grammar) {

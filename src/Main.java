@@ -1,9 +1,11 @@
-﻿import java.io.FileReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import checker.AST;
+import checker.Checker;
 import lexer.LexerException;
 import lexer.LexerGenerator;
 import lexer.LexerGenerator.Token;
@@ -17,42 +19,59 @@ public class Main {
 	public static void main(String[] args) {
 		// If args is not a path to a text file, show help.
 		// Otherwise open the file
-//		if(args.length != 1){
-//			showHelp();
-//			System.exit(0);
-//		}
-//		else{
-//			try {
-//				inputProgram = file2String(args[0]);
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//				showHelp();
-//				System.exit(0);
-//			}
-//		}
+		if(args.length != 1){
+			showHelp();
+			System.exit(0);
+		}
+		else{
+			try {
+				inputProgram = file2String(args[0]);
+			} catch (IOException e) {
+				e.printStackTrace();
+				showHelp();
+				System.exit(0);
+			}
+		}
 		
 		// Lexical Analysis
-//		List<Symbol> symbols = null;
-//		try {
-//			symbols = LexerGenerator.analyse(inputProgram);	
+		List<Symbol> symbols = null;
+		try {
+			symbols = LexerGenerator.analyse(inputProgram);	
 //			System.out.println("Symbol stream: "+symbols);
-//		} catch (LexerException e) {
-//			System.out.println(e.getMessage());
-//			System.out.println(e.getAnalysisBeforeFailure());
-//		}
+		} catch (LexerException e) {
+			System.out.println(e.getMessage());
+			System.out.println(e.getAnalysisBeforeFailure());
+		}
 				
 		// Syntactical Analysis
 		Grammar grammar = WhileGrammar.getInstance();
 //		System.out.println(grammar);
-		GotoDFA gt = new GotoDFA(grammar);
-		gt.printLR0Sets();
-		System.out.println("There are "+gt.states.size()+" LR(0) sets.");
-		System.out.println(gt.countConflicts()+" conflicts were detected");
+//		System.out.println("First set: "+grammar.first);
+//		System.out.println("Follow set: "+grammar.follow);
+		Parser parser = new Parser(grammar);
+//		parser.getGotoDFA().printLR0Sets();
+//		System.out.println("There are "+parser.getGotoDFA().states.size()+" LR(0) sets.");
+//		System.out.println(parser.getGotoDFA().countConflicts()+" conflicts were detected");
 //		System.out.println(parser.getGotoDFA());
-						
-		// Semantical Analysis
+		List<Rule> analysis = null;
+		try {
+			analysis = parser.parseSLR1(symbols);
+			System.out.println(analysis);
+		} catch (ParserException e) {
+			System.out.println("PARSING FAILED!");
+			System.out.println("MESSAGE: "+e.getMessage());
+			System.out.println("ANALYSIS SO FAR: "+e.getAnalysisBeforeFailure());
+			e.printStackTrace();
+		}
 				
+		// Semantical Analysis
+		Checker checker = new Checker(symbols, analysis);
+//		System.out.println(checker.getAst().ast2dot());
+		System.out.println("Every variable was declared before use: "+checker.checkDeclaredBeforeUsed());
+		
 		// Byte Code Generation
+//		String jasminCode = Generator.translateWHILE(checker.getAst());
+//		System.out.println(jasminCode);
 	}
 	
 	public static void showHelp(){
